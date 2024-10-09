@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Link Saver</title>
+        <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+		<style>
+			body {
+			background-color: black;
+			color: white
+            }
+		</style>
+	</head>
+	<body>
+		<h1>Link Saver</h1>
+		<form id="entryForm" autocomplete="off">
+			<label>
+			Name:
+			<input type="text" id="name" required>
+			</label>
+			<label>
+			Link:
+			<input type="text" id="link" required>
+			</label>
+			<label>
+			Note:
+			<input type="text" id="note">
+			</label>
+			<button type="submit" id="addEntryButton">Add Entry</button>
+			<button type="button" id="updateEntryButton" style="display:none;">Update Entry</button>
+		</form>
+		<h2>Saved Links</h2>
+		<table>
+			<thead>
+				<tr>
+					<!-- <th>Name</th> -->
+					<th>Link</th>
+					<th>Note</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody id="bookmarkEntries">
+			</tbody>
+		</table>
+		<script>
+			document.addEventListener('DOMContentLoaded', () => {
+			    const entryForm = document.getElementById('entryForm');
+			    const bookmarkEntries = document.getElementById('bookmarkEntries');
+			    const addEntryButton = document.getElementById('addEntryButton');
+			    const updateEntryButton = document.getElementById('updateEntryButton');
+			
+			    let editingIndex = null;
+			
+			    function loadEntries() {
+			        const entries = JSON.parse(localStorage.getItem('bookmarks')) || [];
+			        bookmarkEntries.innerHTML = '';
+			        entries.forEach((entry, index) => {
+			            const row = document.createElement('tr');
+			            row.innerHTML = `
+			                <td><a href="${entry.link}">${entry.name}</a></td>
+			                <td>${entry.note}</td>
+			                <td class="actions">
+			                    <button onclick="editEntry(${index})">Edit</button>
+			                    <button onclick="confirmDelete(${index})">Delete</button>
+			                </td>
+			            `;
+			            bookmarkEntries.appendChild(row);
+			        });
+			    }
+			    
+			    // Save entries
+			    entryForm.addEventListener('submit', (e) => {
+			        e.preventDefault();
+			        const name = document.getElementById('name').value;
+			        const link = document.getElementById('link').value;
+			        const note = document.getElementById('note').value;
+			
+			        const newEntry = { name, link, note };
+			        const entries = JSON.parse(localStorage.getItem('bookmarks')) || [];
+			        
+			        if (editingIndex !== null) {
+			            entries[editingIndex] = newEntry;
+			            editingIndex = null;
+			        } else {
+			            entries.push(newEntry);
+			        }
+			
+			        localStorage.setItem('bookmarks', JSON.stringify(entries));
+			        entryForm.reset();
+			        addEntryButton.style.display = 'block';
+			        updateEntryButton.style.display = 'none';
+			        loadEntries();
+			    });
+			
+			    window.confirmDelete = (index) => {
+			        if (confirm('Are you sure you want to delete this entry?')) {
+			            deleteEntry(index);
+			        }
+			    };
+			
+			    function deleteEntry(index) {
+			        const entries = JSON.parse(localStorage.getItem('bookmarks')) || [];
+			        entries.splice(index, 1);
+			        localStorage.setItem('bookmarks', JSON.stringify(entries));
+			        loadEntries();
+			    }
+			
+			    window.editEntry = (index) => {
+			        const entries = JSON.parse(localStorage.getItem('bookmarks')) || [];
+			        const entry = entries[index];
+			        document.getElementById('name').value = entry.name;
+			        document.getElementById('link').value = entry.link;
+			        document.getElementById('note').value = entry.note;
+			
+			        editingIndex = index;
+			        addEntryButton.style.display = 'none';
+			        updateEntryButton.style.display = 'block';
+			    };
+			
+			    updateEntryButton.addEventListener('click', (e) => {
+			        e.preventDefault();
+			        const name = document.getElementById('name').value;
+			        const link = document.getElementById('link').value;
+			        const note = document.getElementById('note').value;
+			
+			        const updatedEntry = { name, link, note };
+			        const entries = JSON.parse(localStorage.getItem('bookmarks')) || [];
+			
+			        if (editingIndex !== null) {
+			            entries[editingIndex] = updatedEntry;
+			            localStorage.setItem('bookmarks', JSON.stringify(entries));
+			            entryForm.reset();
+			            addEntryButton.style.display = 'block';
+			            updateEntryButton.style.display = 'none';
+			            editingIndex = null;
+			            loadEntries();
+			        }
+			    });
+			
+			    loadEntries();
+			});
+		</script>
